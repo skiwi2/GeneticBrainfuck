@@ -16,10 +16,10 @@ namespace GeneticBrainfuck
         {
             var testcases = new List<Testcase>
             {
-                new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("Hello, world!"))
-                //new Testcase(new List<byte> { 63 }, new List<byte> { 126 }),
-                //new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
-                //new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
+                //new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("Hello, world!"))
+                new Testcase(new List<byte> { 63 }, new List<byte> { 126 }),
+                new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
+                new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
             };
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
                 CreateNewBrainfuckGen, 
@@ -37,8 +37,39 @@ namespace GeneticBrainfuck
                 var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
                 var programText = new string(generationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
                 Console.WriteLine($"{generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
-                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.05d, 0.001d, 0.01d);
+
+                if (IsCorrectProgram(programText, testcases))
+                {
+                    Console.WriteLine($"Found correct program: {programText}");
+                }
+
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.2d, 0.001d, 0.01d);
             }
+        }
+
+        private static bool IsCorrectProgram(string programText, IList<Testcase> testcases)
+        {
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
+            var task = Task.Run(() =>
+            {
+                try
+                {
+                    var program = new BFProgram(programText, new BFMemory(100));
+                    foreach (var testcase in testcases)
+                    {
+                        if (!Enumerable.SequenceEqual(testcase.Output, program.Execute(testcase.Input, cancellationToken)))
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                catch (InvalidBFProgramException)
+                {
+                    return false;
+                }
+            }, cancellationToken);
+            return task.Result;
         }
 
         private static BrainfuckGen CreateNewBrainfuckGen(BrainfuckGen oldGen, Random random)
