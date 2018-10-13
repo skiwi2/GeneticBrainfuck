@@ -5,13 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GeneticBrainfuck.Genetic
+namespace GeneticBrainfuck.Algorithm
+
 {
     public class GeneticAlgorithm<T> where T : struct
     {
-        private Func<T> CreateRandomGen { get; set; }
+        private Func<T, Random, T> CreateNewRandomGen { get; set; }
 
-        private T DeletedGenValue { get; set; }
+        private T NullGenValue { get; set; }
 
         private Func<LinkedList<T>, int> CalculateFitness { get; set; }
 
@@ -19,10 +20,10 @@ namespace GeneticBrainfuck.Genetic
 
         private List<LinkedList<T>> Population { get; set; }
 
-        public GeneticAlgorithm(Func<T> createRandomGen, T deletedGenValue, Func<LinkedList<T>, int> calculateFitness)
+        public GeneticAlgorithm(Func<T, Random, T> createNewRandomGen, T nullGenValue, Func<LinkedList<T>, int> calculateFitness)
         {
-            CreateRandomGen = createRandomGen;
-            DeletedGenValue = deletedGenValue;
+            CreateNewRandomGen = createNewRandomGen;
+            NullGenValue = nullGenValue;
             CalculateFitness = calculateFitness;
             Random = new Random();
         }
@@ -41,7 +42,7 @@ namespace GeneticBrainfuck.Genetic
             var linkedList = new LinkedList<T>();
             for (int i = 0; i < individualSize; i++)
             {
-                linkedList.AddLast(CreateRandomGen());
+                linkedList.AddLast(CreateNewRandomGen(NullGenValue, Random));
             }
             return linkedList;
         }
@@ -65,14 +66,14 @@ namespace GeneticBrainfuck.Genetic
             var totalFitness = individualResults.Select(individualResult => individualResult.Fitness).Sum();
             foreach (var individualResult in individualResults)
             {
-                individualResult.NormalizedFitness = individualResult.Fitness / totalFitness;
+                individualResult.NormalizedFitness = (double)individualResult.Fitness / totalFitness;
             }
 
             var sortedIndividualResults = individualResults.OrderByDescending(individualResult => individualResult.NormalizedFitness).ToList();
             sortedIndividualResults[0].CumulativeNormalizedFitness = sortedIndividualResults[0].NormalizedFitness;
             for (int i = 1; i < sortedIndividualResults.Count; i++)
             {
-                sortedIndividualResults[i].CumulativeNormalizedFitness = sortedIndividualResults[i - 1].CumulativeNormalizedFitness;
+                sortedIndividualResults[i].CumulativeNormalizedFitness = sortedIndividualResults[i - 1].CumulativeNormalizedFitness + sortedIndividualResults[i].NormalizedFitness;
             }
 
             return sortedIndividualResults;
@@ -136,19 +137,19 @@ namespace GeneticBrainfuck.Genetic
                 {
                     if (mutationRate >= Random.NextDouble())
                     {
-                        node.Value = CreateRandomGen();
+                        node.Value = CreateNewRandomGen(node.Value, Random);
                     }
                     if (insertionRate >= Random.NextDouble())
                     {
                         foreach (var innerIndividual in newPopulation)
                         {
-                            innerIndividual.AddAfter(GetNthNode(innerIndividual, position), CreateRandomGen());
+                            innerIndividual.AddAfter(GetNthNode(innerIndividual, position), CreateNewRandomGen(NullGenValue, Random));
                         }
                         node = node.Next;
                     }
                     if (deletionRate >= Random.NextDouble())
                     {
-                        node.Value = DeletedGenValue;
+                        node.Value = NullGenValue;
                     }
                     node = node.Next;
                     position++;

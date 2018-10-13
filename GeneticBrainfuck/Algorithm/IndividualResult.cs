@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GeneticBrainfuck.Genetic
+namespace GeneticBrainfuck.Algorithm
 {
     public class IndividualResult<T>
     {

@@ -42,10 +42,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Genetic\GeneticAlgorithm.cs" />
-    <Compile Include="Genetic\IndividualResult.cs" />
+    <Compile Include="Algorithm\GeneticAlgorithm.cs" />
+    <Compile Include="Algorithm\IndividualResult.cs" />
+    <Compile Include="BrainfuckGen.cs" />
+    <Compile Include="Interpreter\BFMemory.cs" />
+    <Compile Include="Interpreter\BFProgram.cs" />
+    <Compile Include="Interpreter\InvalidBFProgramException.cs" />
+    <Compile Include="Interpreter\Nodes\DecrementNode.cs" />
+    <Compile Include="Interpreter\Nodes\IncrementNode.cs" />
+    <Compile Include="Interpreter\Nodes\INode.cs" />
+    <Compile Include="Interpreter\Nodes\InputNode.cs" />
+    <Compile Include="Interpreter\Nodes\LoopNode.cs" />
+    <Compile Include="Interpreter\Nodes\MoveLeftNode.cs" />
+    <Compile Include="Interpreter\Nodes\MoveRightNode.cs" />
+    <Compile Include="Interpreter\Nodes\OutputNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Testcase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
