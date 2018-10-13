@@ -159,7 +159,7 @@ namespace GeneticBrainfuck.Algorithm
                 int position = 0;
                 while (node != null)
                 {
-                    if (mutationRate >= Random.NextDouble())
+                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && mutationRate >= Random.NextDouble())
                     {
                         node.Value = CreateNewRandomGen(node.Value, Random);
                     }
@@ -167,18 +167,25 @@ namespace GeneticBrainfuck.Algorithm
                     {
                         node.Value = NullGenValue;
                     }
-                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && insertionRate >= Random.NextDouble())
+                    if (insertionRate >= Random.NextDouble())
                     {
-                        foreach (var innerIndividual in newPopulation)
+                        if (EqualityComparer<T>.Default.Equals(node.Value, NullGenValue))
                         {
-                            innerIndividual.AddAfter(GetNthNode(innerIndividual, position), NullGenValue);
+                            node.Value = CreateNewRandomGen(node.Value, Random);
                         }
-                        foreach (var elite in elites)
+                        else
                         {
-                            elite.AddAfter(GetNthNode(elite, position), NullGenValue);
+                            foreach (var innerIndividual in newPopulation)
+                            {
+                                innerIndividual.AddAfter(GetNthNode(innerIndividual, position), NullGenValue);
+                            }
+                            foreach (var elite in elites)
+                            {
+                                elite.AddAfter(GetNthNode(elite, position), NullGenValue);
+                            }
+                            node.Value = CreateNewRandomGen(NullGenValue, Random);
+                            node = node.Next;
                         }
-                        node.Value = CreateNewRandomGen(NullGenValue, Random);
-                        node = node.Next;
                     }
                     node = node.Next;
                     position++;

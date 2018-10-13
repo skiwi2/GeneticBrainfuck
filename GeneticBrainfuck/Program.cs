@@ -59,7 +59,7 @@ namespace GeneticBrainfuck
                 {
                     // skip
                 }
-                fitness -= (programText.Length * 5);
+                fitness -= programText.Length;
                 fitness = (fitness > 0) ? fitness : 0;
                 return fitness;
             }, cancellationToken);
