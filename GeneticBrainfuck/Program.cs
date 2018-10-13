@@ -16,15 +16,21 @@ namespace GeneticBrainfuck
         {
             var testcases = new List<Testcase>
             {
-                new Testcase(new List<byte> { 63 }, new List<byte> { 126 }),
-                new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
-                new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
+                new Testcase(new List<byte> { 126 }, new List<byte> { 127 }),
+                new Testcase(new List<byte> { 127 }, new List<byte> { 128 }),
+                new Testcase(new List<byte> { 128 }, new List<byte> { 129 })
             };
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(CreateNewBrainfuckGen, BrainfuckGen.Null, individual => CalculateFitness(individual, testcases));
-            geneticAlgorithm.InitializePopulation(100, 2);
+            geneticAlgorithm.InitializePopulation(1000, 2);
+            var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
+            var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+            Console.WriteLine($"{initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
             while (true)
             {
-                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.01d, 0.0001d, 0.0001d);
+                var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
+                var programText = new string(generationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+                Console.WriteLine($"{generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.2d, 0.001d, 0.001d);
             }
         }
 
@@ -55,7 +61,6 @@ namespace GeneticBrainfuck
                 }
                 fitness -= (programText.Length * 5);
                 fitness = (fitness > 0) ? fitness : 0;
-                Console.WriteLine($"{fitness,5} fitness for {programText}");
                 return fitness;
             }, cancellationToken);
             return task.Result;

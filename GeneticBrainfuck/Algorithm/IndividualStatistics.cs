@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GeneticBrainfuck.Algorithm
 {
-    public class IndividualResult<T>
+    public class IndividualStatistics<T>
     {
         public LinkedList<T> Individual { get; private set; }
 
@@ -16,7 +16,7 @@ namespace GeneticBrainfuck.Algorithm
 
         public double CumulativeNormalizedFitness { get; set; }
 
-        public IndividualResult(LinkedList<T> individual, int fitness)
+        public IndividualStatistics(LinkedList<T> individual, int fitness)
         {
             Individual = individual;
             Fitness = fitness;

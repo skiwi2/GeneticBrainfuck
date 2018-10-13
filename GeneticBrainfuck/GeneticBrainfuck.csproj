@@ -42,8 +42,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Algorithm\GenerationStatistics.cs" />
     <Compile Include="Algorithm\GeneticAlgorithm.cs" />
-    <Compile Include="Algorithm\IndividualResult.cs" />
+    <Compile Include="Algorithm\IndividualStatistics.cs" />
     <Compile Include="BrainfuckGen.cs" />
     <Compile Include="Interpreter\BFMemory.cs" />
     <Compile Include="Interpreter\BFProgram.cs" />
