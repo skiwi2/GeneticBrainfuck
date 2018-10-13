@@ -117,6 +117,12 @@ namespace GeneticBrainfuck.Algorithm
 
         private LinkedList<T> GetWeightedRandomIndividual()
         {
+            if (Double.IsNaN(IndividualStatistics[0].NormalizedFitness))
+            {
+                // apparently the sum of fitnesses was zero, so we can just pick any individual
+                return IndividualStatistics[Random.Next(Population.Count)].Individual;
+            }
+
             var threshold = Random.NextDouble();
             var dummyIndividualResult = new IndividualStatistics<T>(null, 0)
             {
