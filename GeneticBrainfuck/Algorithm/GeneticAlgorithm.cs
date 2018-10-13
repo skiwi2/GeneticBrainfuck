@@ -115,7 +115,12 @@ namespace GeneticBrainfuck.Algorithm
                 do
                 {
                     var leftParent = GetWeightedRandomIndividual();
-                    var rightParent = GetWeightedRandomIndividual();
+                    LinkedList<T> rightParent;
+                    do
+                    {
+                        rightParent = GetWeightedRandomIndividual();
+                    }
+                    while (Enumerable.SequenceEqual(leftParent, rightParent));
                     newIndividual = Crossover(leftParent, rightParent);
                 }
                 while (!ValidateIndividual(newIndividual));
