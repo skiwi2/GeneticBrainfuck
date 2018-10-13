@@ -47,11 +47,17 @@ namespace GeneticBrainfuck.Algorithm
             return linkedList;
         }
 
-        public void ComputeNextGeneration(double mutationRate, double insertionRate, double deletionRate)
+        public void ComputeNextGeneration(double elitismFactor, double mutationRate, double insertionRate, double deletionRate)
         {
             var individualResults = ComputeIndividualResults();
-            var newPopulation = CreateNewPopulation(individualResults);
-            MutatePopulation(newPopulation, mutationRate, insertionRate, deletionRate);
+
+            var numberOfElites = (int)(Math.Ceiling(elitismFactor * Population.Count));
+
+            var elites = RetrieveElites(individualResults, numberOfElites);
+            var newPopulation = CreateNewPopulation(individualResults, Population.Count - numberOfElites);
+            MutateNewPopulation(newPopulation, elites, mutationRate, insertionRate, deletionRate);
+            newPopulation.AddRange(elites);
+            Debug.Assert(newPopulation.Count == Population.Count);
             Population = newPopulation;
         }
 
@@ -79,10 +85,20 @@ namespace GeneticBrainfuck.Algorithm
             return sortedIndividualResults;
         }
 
-        private List<LinkedList<T>> CreateNewPopulation(List<IndividualResult<T>> individualResults)
+        private List<LinkedList<T>> RetrieveElites(List<IndividualResult<T>> individualResults, int numberOfElites)
         {
-            var newPopulation = new List<LinkedList<T>>(Population.Count);
-            for (int i = 0; i < Population.Count; i++)
+            var elites = new List<LinkedList<T>>();
+            foreach (var individualResult in individualResults.Take(numberOfElites))
+            {
+                elites.Add(individualResult.Individual);
+            }
+            return elites;
+        }
+
+        private List<LinkedList<T>> CreateNewPopulation(List<IndividualResult<T>> individualResults, int newPopulationSize)
+        {
+            var newPopulation = new List<LinkedList<T>>(newPopulationSize);
+            for (int i = 0; i < newPopulationSize; i++)
             {
                 var leftParent = GetWeightedRandomIndividual(individualResults);
                 var rightParent = GetWeightedRandomIndividual(individualResults);
@@ -127,7 +143,7 @@ namespace GeneticBrainfuck.Algorithm
             return newIndividual;
         }
 
-        private void MutatePopulation(List<LinkedList<T>> newPopulation, double mutationRate, double insertionRate, double deletionRate)
+        private void MutateNewPopulation(List<LinkedList<T>> newPopulation, List<LinkedList<T>> elites, double mutationRate, double insertionRate, double deletionRate)
         {
             foreach (var individual in newPopulation)
             {
@@ -139,15 +155,20 @@ namespace GeneticBrainfuck.Algorithm
                     {
                         node.Value = CreateNewRandomGen(node.Value, Random);
                     }
-                    if (insertionRate >= Random.NextDouble())
+                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && insertionRate >= Random.NextDouble())
                     {
                         foreach (var innerIndividual in newPopulation)
                         {
-                            innerIndividual.AddAfter(GetNthNode(innerIndividual, position), CreateNewRandomGen(NullGenValue, Random));
+                            innerIndividual.AddAfter(GetNthNode(innerIndividual, position), NullGenValue);
                         }
+                        foreach (var elite in elites)
+                        {
+                            elite.AddAfter(GetNthNode(elite, position), NullGenValue);
+                        }
+                        node.Value = CreateNewRandomGen(NullGenValue, Random);
                         node = node.Next;
                     }
-                    if (deletionRate >= Random.NextDouble())
+                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && deletionRate >= Random.NextDouble())
                     {
                         node.Value = NullGenValue;
                     }

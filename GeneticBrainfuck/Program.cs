@@ -16,15 +16,15 @@ namespace GeneticBrainfuck
         {
             var testcases = new List<Testcase>
             {
-                new Testcase(new List<byte> { 1 }, new List<byte> { 1 }),
-                new Testcase(new List<byte> { 2 }, new List<byte> { 2 }),
-                new Testcase(new List<byte> { 3 }, new List<byte> { 3 })
+                new Testcase(new List<byte> { 63 }, new List<byte> { 126 }),
+                new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
+                new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
             };
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(CreateNewBrainfuckGen, BrainfuckGen.Null, individual => CalculateFitness(individual, testcases));
             geneticAlgorithm.InitializePopulation(100, 2);
             while (true)
             {
-                geneticAlgorithm.ComputeNextGeneration(0.02d, 0.001d, 0.001d);
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.01d, 0.0001d, 0.0001d);
             }
         }
 
@@ -53,8 +53,9 @@ namespace GeneticBrainfuck
                 {
                     // skip
                 }
+                fitness -= (programText.Length * 5);
                 fitness = (fitness > 0) ? fitness : 0;
-                Console.WriteLine($"Fitness for {programText}: {fitness}");
+                Console.WriteLine($"{fitness,5} fitness for {programText}");
                 return fitness;
             }, cancellationToken);
             return task.Result;
