@@ -14,6 +14,8 @@ namespace GeneticBrainfuck.Algorithm
 
         private T NullGenValue { get; set; }
 
+        private Predicate<LinkedList<T>> ValidateIndividual { get; set; }
+
         private Func<LinkedList<T>, int> CalculateFitness { get; set; }
 
         private Random Random { get; set; }
@@ -22,10 +24,11 @@ namespace GeneticBrainfuck.Algorithm
 
         private List<IndividualStatistics<T>> IndividualStatistics { get; set; }
 
-        public GeneticAlgorithm(Func<T, Random, T> createNewRandomGen, T nullGenValue, Func<LinkedList<T>, int> calculateFitness)
+        public GeneticAlgorithm(Func<T, Random, T> createNewRandomGen, T nullGenValue, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
         {
             CreateNewRandomGen = createNewRandomGen;
             NullGenValue = nullGenValue;
+            ValidateIndividual = validateIndividual;
             CalculateFitness = calculateFitness;
             Random = new Random();
         }
@@ -108,9 +111,15 @@ namespace GeneticBrainfuck.Algorithm
             var newPopulation = new List<LinkedList<T>>(newPopulationSize);
             for (int i = 0; i < newPopulationSize; i++)
             {
-                var leftParent = GetWeightedRandomIndividual();
-                var rightParent = GetWeightedRandomIndividual();
-                newPopulation.Add(Crossover(leftParent, rightParent));
+                LinkedList<T> newIndividual = null;
+                do
+                {
+                    var leftParent = GetWeightedRandomIndividual();
+                    var rightParent = GetWeightedRandomIndividual();
+                    newIndividual = Crossover(leftParent, rightParent);
+                }
+                while (!ValidateIndividual(newIndividual));
+                newPopulation.Add(newIndividual);
             }
             return newPopulation;
         }

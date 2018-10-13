@@ -21,17 +21,23 @@ namespace GeneticBrainfuck
                 //new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
                 //new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
             };
-            var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(CreateNewBrainfuckGen, BrainfuckGen.Null, individual => CalculateFitness(individual, testcases));
+            var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
+                CreateNewBrainfuckGen, 
+                BrainfuckGen.Null,
+                ValidateIndividual,
+                individual => CalculateFitness(individual, testcases)
+            );
             geneticAlgorithm.InitializePopulation(100, 2);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
             var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
             Console.WriteLine($"{initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
+
             while (true)
             {
                 var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
                 var programText = new string(generationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
                 Console.WriteLine($"{generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
-                geneticAlgorithm.ComputeNextGeneration(0d, 0.2d, 0.01d, 0.01d);
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.05d, 0.001d, 0.01d);
             }
         }
 
@@ -107,6 +113,20 @@ namespace GeneticBrainfuck
                 score -= 255;
             }
             return score;
+        }
+
+        private static bool ValidateIndividual(LinkedList<BrainfuckGen> individual)
+        {
+            var programText = new string(individual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+            try
+            {
+                new BFProgram(programText, new BFMemory(1));
+                return true;
+            }
+            catch (InvalidBFProgramException)
+            {
+                return false;
+            }
         }
     }
 }
