@@ -81,6 +81,7 @@ namespace GeneticBrainfuck
         private static BrainfuckGen CreateNewBrainfuckGen(BrainfuckGen oldGen, Random random)
         {
             var possibleGenes = ((BrainfuckGen[])Enum.GetValues(typeof(BrainfuckGen))).ToList();
+            possibleGenes.Remove(BrainfuckGen.Null);
             possibleGenes.Remove(oldGen);
             return possibleGenes[random.Next(possibleGenes.Count)];
         }
