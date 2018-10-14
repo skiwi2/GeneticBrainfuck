@@ -130,7 +130,7 @@ namespace GeneticBrainfuck.Algorithm
                 }
                 else
                 {
-                    newIndividual = GetWeightedRandomIndividual();
+                    newIndividual = new LinkedList<T>(GetWeightedRandomIndividual());
                 }
                 newPopulation.Add(newIndividual);
             }
