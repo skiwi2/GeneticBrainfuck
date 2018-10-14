@@ -17,9 +17,15 @@ namespace GeneticBrainfuck
             var testcases = new List<Testcase>
             {
                 //new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("Hello, world!"))
-                new Testcase(new List<byte> { 63 }, new List<byte> { 126 }),
+                new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("ping"))
+                /*new Testcase(new List<byte> { 0 }, new List<byte> { 0 }),
+                new Testcase(new List<byte> { 32 }, new List<byte> { 64 }),
                 new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
-                new Testcase(new List<byte> { 65 }, new List<byte> { 130 })
+                new Testcase(new List<byte> { 96 }, new List<byte> { 192 }),
+                new Testcase(new List<byte> { 128 }, new List<byte> { 0 }),
+                new Testcase(new List<byte> { 160 }, new List<byte> { 64 }),
+                new Testcase(new List<byte> { 192 }, new List<byte> { 128 }),
+                new Testcase(new List<byte> { 224 }, new List<byte> { 192 })*/
             };
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
                 CreateNewBrainfuckGen, 
@@ -27,7 +33,7 @@ namespace GeneticBrainfuck
                 ValidateIndividual,
                 individual => CalculateFitness(individual, testcases)
             );
-            geneticAlgorithm.InitializePopulation(100, 2);
+            geneticAlgorithm.InitializePopulation(40, 8);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
             var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
             Console.WriteLine($"{initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
@@ -43,7 +49,7 @@ namespace GeneticBrainfuck
                     Console.WriteLine($"Found correct program: {programText}");
                 }
 
-                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.2d, 0.001d, 0.01d);
+                geneticAlgorithm.ComputeNextGeneration(0.05d, 0.2d, 0.001d, 0.001d);
             }
         }
 
@@ -97,6 +103,7 @@ namespace GeneticBrainfuck
                 {
                     // skip
                 }
+                fitness *= 2;   // ensure that length penalty is not as harsh as getting closer to the solution
                 fitness -= programText.Length;
                 fitness = (fitness > 0) ? fitness : 0;
                 return fitness;

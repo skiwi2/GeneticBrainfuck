@@ -44,7 +44,13 @@ namespace GeneticBrainfuck.Algorithm
             Population = new List<LinkedList<T>>(populationSize);
             for (int i = 0; i < populationSize; i++)
             {
-                Population.Add(CreateIndividual(individualSize));
+                LinkedList<T> newIndividual = null;
+                do
+                {
+                    newIndividual = CreateIndividual(individualSize);
+                }
+                while (!ValidateIndividual(newIndividual));
+                Population.Add(newIndividual);
             }
             ComputeIndividualStatistics();
         }
@@ -115,12 +121,13 @@ namespace GeneticBrainfuck.Algorithm
                 do
                 {
                     var leftParent = GetWeightedRandomIndividual();
-                    LinkedList<T> rightParent;
+                    /*LinkedList<T> rightParent;
                     do
                     {
                         rightParent = GetWeightedRandomIndividual();
                     }
-                    while (Enumerable.SequenceEqual(leftParent, rightParent));
+                    while (Enumerable.SequenceEqual(leftParent, rightParent));*/
+                    var rightParent = GetWeightedRandomIndividual();
                     newIndividual = Crossover(leftParent, rightParent);
                 }
                 while (!ValidateIndividual(newIndividual));
@@ -195,16 +202,17 @@ namespace GeneticBrainfuck.Algorithm
                         }
                         else
                         {
-                            foreach (var innerIndividual in newPopulation)
+                            foreach (var otherIndividual in newPopulation)
                             {
-                                innerIndividual.AddAfter(GetNthNode(innerIndividual, position), NullGenValue);
+                                otherIndividual.AddAfter(GetNthNode(otherIndividual, position), NullGenValue);
                             }
                             foreach (var elite in elites)
                             {
                                 elite.AddAfter(GetNthNode(elite, position), NullGenValue);
                             }
-                            node.Value = CreateNewRandomGen(NullGenValue, Random);
                             node = node.Next;
+                            position++;
+                            node.Value = CreateNewRandomGen(NullGenValue, Random);
                         }
                     }
                     node = node.Next;
