@@ -12,48 +12,58 @@ namespace GeneticBrainfuck
 {
     class Program
     {
+        private static IList<Testcase> Testcases
+        {
+            get
+            {
+                return new List<Testcase>
+                {
+                    //new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("Hello, world!"))
+                    new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("ping"))
+                    /*new Testcase(new List<byte> { 0 }, new List<byte> { 0 }),
+                    new Testcase(new List<byte> { 32 }, new List<byte> { 64 }),
+                    new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
+                    new Testcase(new List<byte> { 96 }, new List<byte> { 192 }),
+                    new Testcase(new List<byte> { 128 }, new List<byte> { 0 }),
+                    new Testcase(new List<byte> { 160 }, new List<byte> { 64 }),
+                    new Testcase(new List<byte> { 192 }, new List<byte> { 128 }),
+                    new Testcase(new List<byte> { 224 }, new List<byte> { 192 })*/
+                };
+            }
+        }
+
         static void Main(string[] args)
         {
-            var testcases = new List<Testcase>
-            {
-                //new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("Hello, world!"))
-                new Testcase(new List<byte> { }, Encoding.ASCII.GetBytes("ping"))
-                /*new Testcase(new List<byte> { 0 }, new List<byte> { 0 }),
-                new Testcase(new List<byte> { 32 }, new List<byte> { 64 }),
-                new Testcase(new List<byte> { 64 }, new List<byte> { 128 }),
-                new Testcase(new List<byte> { 96 }, new List<byte> { 192 }),
-                new Testcase(new List<byte> { 128 }, new List<byte> { 0 }),
-                new Testcase(new List<byte> { 160 }, new List<byte> { 64 }),
-                new Testcase(new List<byte> { 192 }, new List<byte> { 128 }),
-                new Testcase(new List<byte> { 224 }, new List<byte> { 192 })*/
-            };
+            int generation = 1;
+
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
                 CreateNewBrainfuckGen, 
                 BrainfuckGen.Null,
                 ValidateIndividual,
-                individual => CalculateFitness(individual, testcases)
+                CalculateFitness
             );
-            geneticAlgorithm.InitializePopulation(40, 8);
+            geneticAlgorithm.InitializePopulation(50, 8);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
             var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
-            Console.WriteLine($"{initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
+            Console.WriteLine($"Generation {generation,5}: {initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
 
             while (true)
             {
                 var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
                 var programText = new string(generationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
-                Console.WriteLine($"{generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
+                Console.WriteLine($"Generation {generation,5}: {generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
 
-                if (IsCorrectProgram(programText, testcases))
+                if (IsCorrectProgram(programText))
                 {
                     Console.WriteLine($"Found correct program: {programText}");
                 }
 
-                geneticAlgorithm.ComputeNextGeneration(0.05d, 0.2d, 0.001d, 0.001d);
+                geneticAlgorithm.ComputeNextGeneration(0.2d, 0.5d, 0.01d, 0.01d, 0.01d);
+                generation++;
             }
         }
 
-        private static bool IsCorrectProgram(string programText, IList<Testcase> testcases)
+        private static bool IsCorrectProgram(string programText)
         {
             var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
             var task = Task.Run(() =>
@@ -61,7 +71,7 @@ namespace GeneticBrainfuck
                 try
                 {
                     var program = new BFProgram(programText, new BFMemory(100));
-                    foreach (var testcase in testcases)
+                    foreach (var testcase in Testcases)
                     {
                         if (!Enumerable.SequenceEqual(testcase.Output, program.Execute(testcase.Input, cancellationToken)))
                         {
@@ -86,7 +96,7 @@ namespace GeneticBrainfuck
             return possibleGenes[random.Next(possibleGenes.Count)];
         }
 
-        private static int CalculateFitness(LinkedList<BrainfuckGen> individual, IList<Testcase> testcases) 
+        private static int CalculateFitness(LinkedList<BrainfuckGen> individual) 
         {
             var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
             var task = Task.Run(() => {
@@ -95,7 +105,7 @@ namespace GeneticBrainfuck
                 try
                 {
                     var program = new BFProgram(programText, new BFMemory(100));
-                    foreach (var testcase in testcases)
+                    foreach (var testcase in Testcases)
                     {
                         fitness += CalculateOutputScore(testcase.Output, program.Execute(testcase.Input, cancellationToken));
                     }
@@ -104,7 +114,7 @@ namespace GeneticBrainfuck
                 {
                     // skip
                 }
-                fitness *= 2;   // ensure that length penalty is not as harsh as getting closer to the solution
+                fitness *= 10;   // ensure that length penalty is not as harsh as getting closer to the solution
                 fitness -= programText.Length;
                 fitness = (fitness > 0) ? fitness : 0;
                 return fitness;
@@ -157,15 +167,20 @@ namespace GeneticBrainfuck
         private static bool ValidateIndividual(LinkedList<BrainfuckGen> individual)
         {
             var programText = new string(individual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
-            try
-            {
-                new BFProgram(programText, new BFMemory(1));
-                return true;
-            }
-            catch (InvalidBFProgramException)
-            {
-                return false;
-            }
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
+            var task = Task.Run(() => {
+                try
+                {
+                    var program = new BFProgram(programText, new BFMemory(100));
+                    program.Execute(Testcases[0].Input, cancellationToken);
+                    return true;
+                }
+                catch (InvalidBFProgramException)
+                {
+                    return false;
+                }
+            }, cancellationToken);
+            return task.Result;
         }
     }
 }

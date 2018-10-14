@@ -65,12 +65,12 @@ namespace GeneticBrainfuck.Algorithm
             return linkedList;
         }
 
-        public void ComputeNextGeneration(double elitismFactor, double mutationRate, double insertionRate, double deletionRate)
+        public void ComputeNextGeneration(double elitismFactor, double crossoverRate, double mutationRate, double insertionRate, double deletionRate)
         {
             var numberOfElites = (int)(Math.Ceiling(elitismFactor * Population.Count));
 
             var elites = RetrieveElites(numberOfElites);
-            var newPopulation = CreateNewPopulation(Population.Count - numberOfElites);
+            var newPopulation = CreateNewPopulation(crossoverRate, Population.Count - numberOfElites);
             MutateNewPopulation(newPopulation, elites, mutationRate, insertionRate, deletionRate);
             newPopulation.AddRange(elites);
             Debug.Assert(newPopulation.Count == Population.Count);
@@ -112,25 +112,26 @@ namespace GeneticBrainfuck.Algorithm
             return elites;
         }
 
-        private List<LinkedList<T>> CreateNewPopulation(int newPopulationSize)
+        private List<LinkedList<T>> CreateNewPopulation(double crossoverRate, int newPopulationSize)
         {
             var newPopulation = new List<LinkedList<T>>(newPopulationSize);
             for (int i = 0; i < newPopulationSize; i++)
             {
                 LinkedList<T> newIndividual = null;
-                do
+                if (crossoverRate >= Random.NextDouble())
                 {
-                    var leftParent = GetWeightedRandomIndividual();
-                    /*LinkedList<T> rightParent;
                     do
                     {
-                        rightParent = GetWeightedRandomIndividual();
+                        var leftParent = GetWeightedRandomIndividual();
+                        var rightParent = GetWeightedRandomIndividual();
+                        newIndividual = Crossover(leftParent, rightParent);
                     }
-                    while (Enumerable.SequenceEqual(leftParent, rightParent));*/
-                    var rightParent = GetWeightedRandomIndividual();
-                    newIndividual = Crossover(leftParent, rightParent);
+                    while (!ValidateIndividual(newIndividual));
                 }
-                while (!ValidateIndividual(newIndividual));
+                else
+                {
+                    newIndividual = GetWeightedRandomIndividual();
+                }
                 newPopulation.Add(newIndividual);
             }
             return newPopulation;
