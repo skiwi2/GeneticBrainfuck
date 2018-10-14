@@ -182,26 +182,29 @@ namespace GeneticBrainfuck.Algorithm
             foreach (var individual in newPopulation)
             {
                 var node = individual.First;
-                int position = 0;
                 while (node != null)
                 {
+                    var deletedNode = false;
                     if (mutationRate >= Random.NextDouble())
                     {
                         node.Value = CreateNewRandomGen(node.Value, Random);
-                        node = node.Next;
-                        position++;
                     }
-                    else if (deletionRate >= Random.NextDouble())
+                    if (deletionRate >= Random.NextDouble())
                     {
                         var next = node.Next;
                         individual.Remove(node);
+                        deletedNode = true;
                         node = next;
                     }
-                    else if (insertionRate >= Random.NextDouble())
+                    if (node != null && insertionRate >= Random.NextDouble())
                     {
                         individual.AddAfter(node, CreateNewRandomGen(null, Random));
-                        node = node.Next.Next;
-                        position += 2;
+                        node = node.Next;
+                    }
+
+                    if (!deletedNode)
+                    {
+                        node = node.Next;
                     }
                 }
             }
