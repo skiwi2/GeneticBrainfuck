@@ -8,7 +8,6 @@ namespace GeneticBrainfuck
 {
     public enum BrainfuckGen : byte
     {
-        Null = 0,
         MoveRight = 1,
         MoveLeft = 2,
         Increment = 3,

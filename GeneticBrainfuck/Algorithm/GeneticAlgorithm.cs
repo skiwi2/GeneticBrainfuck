@@ -10,9 +10,7 @@ namespace GeneticBrainfuck.Algorithm
 {
     public class GeneticAlgorithm<T> where T : struct
     {
-        private Func<T, Random, T> CreateNewRandomGen { get; set; }
-
-        private T NullGenValue { get; set; }
+        private Func<T?, Random, T> CreateNewRandomGen { get; set; }
 
         private Predicate<LinkedList<T>> ValidateIndividual { get; set; }
 
@@ -24,10 +22,9 @@ namespace GeneticBrainfuck.Algorithm
 
         private List<IndividualStatistics<T>> IndividualStatistics { get; set; }
 
-        public GeneticAlgorithm(Func<T, Random, T> createNewRandomGen, T nullGenValue, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
+        public GeneticAlgorithm(Func<T?, Random, T> createNewRandomGen, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
         {
             CreateNewRandomGen = createNewRandomGen;
-            NullGenValue = nullGenValue;
             ValidateIndividual = validateIndividual;
             CalculateFitness = calculateFitness;
             Random = new Random();
@@ -60,7 +57,7 @@ namespace GeneticBrainfuck.Algorithm
             var linkedList = new LinkedList<T>();
             for (int i = 0; i < individualSize; i++)
             {
-                linkedList.AddLast(CreateNewRandomGen(NullGenValue, Random));
+                linkedList.AddLast(CreateNewRandomGen(null, Random));
             }
             return linkedList;
         }
@@ -164,15 +161,16 @@ namespace GeneticBrainfuck.Algorithm
 
         private LinkedList<T> Crossover(LinkedList<T> leftParent, LinkedList<T> rightParent)
         {
-            Debug.Assert(leftParent.Count == rightParent.Count);
-            var crossoverPoint = Random.Next(leftParent.Count);
+            var crossoverRatio = Random.NextDouble();
+            var leftParentCrossoverPoint = (int)Math.Ceiling(leftParent.Count * crossoverRatio);
+            var rightParentCrossoverPoint = (int)Math.Ceiling(leftParent.Count * crossoverRatio);
             // TODO could be more efficient
             var newIndividual = new LinkedList<T>();
-            foreach (var leftGen in leftParent.Take(crossoverPoint))
+            foreach (var leftGen in leftParent.Take(leftParentCrossoverPoint))
             {
                 newIndividual.AddLast(leftGen);
             }
-            foreach (var rightGen in rightParent.Skip(crossoverPoint))
+            foreach (var rightGen in rightParent.Skip(rightParentCrossoverPoint))
             {
                 newIndividual.AddLast(rightGen);
             }
@@ -187,55 +185,26 @@ namespace GeneticBrainfuck.Algorithm
                 int position = 0;
                 while (node != null)
                 {
-                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && mutationRate >= Random.NextDouble())
+                    if (mutationRate >= Random.NextDouble())
                     {
                         node.Value = CreateNewRandomGen(node.Value, Random);
+                        node = node.Next;
+                        position++;
                     }
-                    if (!EqualityComparer<T>.Default.Equals(node.Value, NullGenValue) && deletionRate >= Random.NextDouble())
+                    else if (deletionRate >= Random.NextDouble())
                     {
-                        node.Value = NullGenValue;
+                        var next = node.Next;
+                        individual.Remove(node);
+                        node = next;
                     }
-                    if (insertionRate >= Random.NextDouble())
+                    else if (insertionRate >= Random.NextDouble())
                     {
-                        if (EqualityComparer<T>.Default.Equals(node.Value, NullGenValue))
-                        {
-                            node.Value = CreateNewRandomGen(node.Value, Random);
-                        }
-                        else
-                        {
-                            foreach (var otherIndividual in newPopulation)
-                            {
-                                otherIndividual.AddAfter(GetNthNode(otherIndividual, position), NullGenValue);
-                            }
-                            foreach (var elite in elites)
-                            {
-                                elite.AddAfter(GetNthNode(elite, position), NullGenValue);
-                            }
-                            node = node.Next;
-                            position++;
-                            node.Value = CreateNewRandomGen(NullGenValue, Random);
-                        }
+                        individual.AddAfter(node, CreateNewRandomGen(null, Random));
+                        node = node.Next.Next;
+                        position += 2;
                     }
-                    node = node.Next;
-                    position++;
                 }
             }
-        }
-
-        private LinkedListNode<T> GetNthNode(LinkedList<T> linkedList, int index)
-        {
-            var node = linkedList.First;
-            int position = 0;
-            while (node != null)
-            {
-                if (position == index)
-                {
-                    return node;
-                }
-                node = node.Next;
-                position++;
-            }
-            return null;
         }
     }
 }

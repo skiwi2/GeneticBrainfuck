@@ -38,19 +38,18 @@ namespace GeneticBrainfuck
 
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
                 CreateNewBrainfuckGen, 
-                BrainfuckGen.Null,
                 ValidateIndividual,
                 CalculateFitness
             );
             geneticAlgorithm.InitializePopulation(50, 8);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
-            var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+            var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Select(ToBFChar).ToArray());
             Console.WriteLine($"Generation {generation,5}: {initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
 
             while (true)
             {
                 var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
-                var programText = new string(generationStatistics.BestIndividual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+                var programText = new string(generationStatistics.BestIndividual.Select(ToBFChar).ToArray());
                 Console.WriteLine($"Generation {generation,5}: {generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
 
                 if (IsCorrectProgram(programText))
@@ -58,7 +57,7 @@ namespace GeneticBrainfuck
                     Console.WriteLine($"Found correct program: {programText}");
                 }
 
-                geneticAlgorithm.ComputeNextGeneration(0.2d, 0.5d, 0.01d, 0.01d, 0.01d);
+                geneticAlgorithm.ComputeNextGeneration(0.2d, 0.5d, 0.05d, 0.05d, 0.05d);
                 generation++;
             }
         }
@@ -88,11 +87,13 @@ namespace GeneticBrainfuck
             return task.Result;
         }
 
-        private static BrainfuckGen CreateNewBrainfuckGen(BrainfuckGen oldGen, Random random)
+        private static BrainfuckGen CreateNewBrainfuckGen(BrainfuckGen? oldGen, Random random)
         {
             var possibleGenes = ((BrainfuckGen[])Enum.GetValues(typeof(BrainfuckGen))).ToList();
-            possibleGenes.Remove(BrainfuckGen.Null);
-            possibleGenes.Remove(oldGen);
+            if (oldGen.HasValue)
+            {
+                possibleGenes.Remove(oldGen.Value);
+            }
             return possibleGenes[random.Next(possibleGenes.Count)];
         }
 
@@ -101,7 +102,7 @@ namespace GeneticBrainfuck
             var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
             var task = Task.Run(() => {
                 int fitness = 0;
-                var programText = new string(individual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+                var programText = new string(individual.Select(ToBFChar).ToArray());
                 try
                 {
                     var program = new BFProgram(programText, new BFMemory(100));
@@ -166,7 +167,7 @@ namespace GeneticBrainfuck
 
         private static bool ValidateIndividual(LinkedList<BrainfuckGen> individual)
         {
-            var programText = new string(individual.Where(brainfuckGen => brainfuckGen != BrainfuckGen.Null).Select(ToBFChar).ToArray());
+            var programText = new string(individual.Select(ToBFChar).ToArray());
             var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
             var task = Task.Run(() => {
                 try
