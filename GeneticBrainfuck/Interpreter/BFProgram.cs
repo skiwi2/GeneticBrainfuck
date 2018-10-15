@@ -29,14 +29,19 @@ namespace GeneticBrainfuck.Interpreter
             {
                 Memory.Reset();
             }
+            var inputEnumerator = input.GetEnumerator();
             var output = new List<byte>();
             switch (RootNode)
             {
                 case LoopNode loopNode:
-                    ExecuteImpl(loopNode, input.GetEnumerator(), output, cancellationToken, ref instructions);
+                    ExecuteImpl(loopNode, inputEnumerator, output, cancellationToken, ref instructions);
                     break;
                 default:
                     throw new InvalidBFProgramException("Expected loop node", false);
+            }
+            if (inputEnumerator.MoveNext())
+            {
+                throw new InvalidBFProgramException("Not all input was used", true);
             }
             return output;
         }
