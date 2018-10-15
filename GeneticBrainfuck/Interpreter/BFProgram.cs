@@ -23,7 +23,7 @@ namespace GeneticBrainfuck.Interpreter
             Memory = memory;
         }
 
-        public IList<byte> Execute(IEnumerable<byte> input, CancellationToken cancellationToken)
+        public IList<byte> Execute(IEnumerable<byte> input, CancellationToken cancellationToken, ref int instructions)
         {
             if (Executions++ > 0)
             {
@@ -33,7 +33,7 @@ namespace GeneticBrainfuck.Interpreter
             switch (RootNode)
             {
                 case LoopNode loopNode:
-                    ExecuteImpl(loopNode, input.GetEnumerator(), output, cancellationToken);
+                    ExecuteImpl(loopNode, input.GetEnumerator(), output, cancellationToken, ref instructions);
                     break;
                 default:
                     throw new InvalidBFProgramException("Expected loop node", false);
@@ -41,7 +41,7 @@ namespace GeneticBrainfuck.Interpreter
             return output;
         }
 
-        private void ExecuteImpl(LoopNode loopNode, IEnumerator<byte> inputEnumerator, ICollection<byte> output, CancellationToken cancellationToken)
+        private void ExecuteImpl(LoopNode loopNode, IEnumerator<byte> inputEnumerator, ICollection<byte> output, CancellationToken cancellationToken, ref int instructions)
         {
             foreach (var node in loopNode.Children)
             {
@@ -52,18 +52,23 @@ namespace GeneticBrainfuck.Interpreter
                 switch (node)
                 {
                     case MoveRightNode moveRightNode:
+                        instructions++;
                         Memory.MoveRight();
                         break;
                     case MoveLeftNode moveLeftNode:
+                        instructions++;
                         Memory.MoveLeft();
                         break;
                     case IncrementNode incrementNode:
+                        instructions++;
                         Memory.Increment();
                         break;
                     case DecrementNode decrementNode:
+                        instructions++;
                         Memory.Decrement();
                         break;
                     case InputNode inputNode:
+                        instructions++;
                         if (!inputEnumerator.MoveNext())
                         {
                             throw new InvalidBFProgramException("No input available anymore", false);
@@ -71,17 +76,20 @@ namespace GeneticBrainfuck.Interpreter
                         Memory.SetValue(inputEnumerator.Current);
                         break;
                     case OutputNode outputNode:
+                        instructions++;
                         output.Add(Memory.GetValue());
                         break;
                     case LoopNode innerLoopNode:
                         while (Memory.GetValue() > 0)
                         {
+                            instructions++;
                             if (cancellationToken.IsCancellationRequested)
                             {
                                 throw new InvalidBFProgramException("Cancellation requested", false);
                             }
-                            ExecuteImpl(innerLoopNode, inputEnumerator, output, cancellationToken);
+                            ExecuteImpl(innerLoopNode, inputEnumerator, output, cancellationToken, ref instructions);
                         }
+                        instructions++;
                         break;
                     default:
                         throw new InvalidBFProgramException("Unexpected child node", false);

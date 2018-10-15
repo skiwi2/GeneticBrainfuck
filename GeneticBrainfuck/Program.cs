@@ -28,6 +28,14 @@ namespace GeneticBrainfuck
                     new Testcase(new List<byte> { 160 }, new List<byte> { 64 }),
                     new Testcase(new List<byte> { 192 }, new List<byte> { 128 }),
                     new Testcase(new List<byte> { 224 }, new List<byte> { 192 })*/
+                    /*new Testcase(new List<byte> { 97, 194 }, new List<byte> { 35 }),
+                    new Testcase(new List<byte> { 142, 44 }, new List<byte> { 186 }),
+                    new Testcase(new List<byte> { 123, 250 }, new List<byte> { 117 }),
+                    new Testcase(new List<byte> { 124, 23 }, new List<byte> { 147 }),
+                    new Testcase(new List<byte> { 116, 91 }, new List<byte> { 207 }),
+                    new Testcase(new List<byte> { 112, 165 }, new List<byte> { 21 }),
+                    new Testcase(new List<byte> { 214, 203 }, new List<byte> { 161 }),
+                    new Testcase(new List<byte> { 23, 130 }, new List<byte> { 153 })*/
                 };
             }
         }
@@ -55,7 +63,7 @@ namespace GeneticBrainfuck
                     Console.WriteLine($"Found correct program: {programText}");
                 }
 
-                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.5d, 0.05d, 0.05d, 0.05d);
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.5d, 0.01d, 0.01d, 0.01d);
             }
         }
 
@@ -69,7 +77,7 @@ namespace GeneticBrainfuck
 
         private static bool IsCorrectProgram(string programText)
         {
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10)).Token;
             var task = Task.Run(() =>
             {
                 try
@@ -77,7 +85,8 @@ namespace GeneticBrainfuck
                     var program = new BFProgram(programText, new BFMemory(100));
                     foreach (var testcase in Testcases)
                     {
-                        if (!Enumerable.SequenceEqual(testcase.Output, program.Execute(testcase.Input, cancellationToken)))
+                        int instructions = 0;
+                        if (!Enumerable.SequenceEqual(testcase.Output, program.Execute(testcase.Input, cancellationToken, ref instructions)))
                         {
                             return false;
                         }
@@ -99,25 +108,33 @@ namespace GeneticBrainfuck
 
         private static int CalculateFitness(LinkedList<BrainfuckGen> individual) 
         {
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10)).Token;
             var task = Task.Run(() => {
                 int fitness = 0;
+                int instructions = 0;
                 var programText = new string(individual.Select(ToBFChar).ToArray());
                 try
                 {
                     var program = new BFProgram(programText, new BFMemory(100));
                     foreach (var testcase in Testcases)
                     {
-                        fitness += CalculateOutputScore(testcase.Output, program.Execute(testcase.Input, cancellationToken));
+                        int testcaseInstructions = 0;
+                        fitness += CalculateOutputScore(testcase.Output, program.Execute(testcase.Input, cancellationToken, ref testcaseInstructions));
+                        // we only want to add if the program didn't run infinitely long
+                        instructions += testcaseInstructions;
+                    }
+                    checked
+                    {
+                        fitness *= 10;   // ensure that length penalty is not as harsh as getting closer to the solution
+                        fitness -= (instructions / 100);
+                        fitness -= programText.Length;
+                        fitness = (fitness > 0) ? fitness : 0;
                     }
                 }
                 catch (InvalidBFProgramException)
                 {
-                    // skip
+                    fitness = 0;
                 }
-                fitness *= 10;   // ensure that length penalty is not as harsh as getting closer to the solution
-                fitness -= programText.Length;
-                fitness = (fitness > 0) ? fitness : 0;
                 return fitness;
             }, cancellationToken);
             return task.Result;
@@ -168,12 +185,13 @@ namespace GeneticBrainfuck
         private static bool ValidateIndividual(LinkedList<BrainfuckGen> individual)
         {
             var programText = new string(individual.Select(ToBFChar).ToArray());
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)).Token;
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10)).Token;
             var task = Task.Run(() => {
                 try
                 {
                     var program = new BFProgram(programText, new BFMemory(100));
-                    program.Execute(Testcases[0].Input, cancellationToken);
+                    int instructions = 0;
+                    program.Execute(Testcases[0].Input, cancellationToken, ref instructions);
                     return true;
                 }
                 catch (InvalidBFProgramException)
