@@ -10,7 +10,7 @@ namespace GeneticBrainfuck.Algorithm
 {
     public class GeneticAlgorithm<T> where T : struct
     {
-        private Func<T?, Random, T> CreateNewRandomGen { get; set; }
+        private Func<Random, T> CreateNewRandomGen { get; set; }
 
         private Predicate<LinkedList<T>> ValidateIndividual { get; set; }
 
@@ -22,7 +22,7 @@ namespace GeneticBrainfuck.Algorithm
 
         private List<IndividualStatistics<T>> IndividualStatistics { get; set; }
 
-        public GeneticAlgorithm(Func<T?, Random, T> createNewRandomGen, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
+        public GeneticAlgorithm(Func<Random, T> createNewRandomGen, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
         {
             CreateNewRandomGen = createNewRandomGen;
             ValidateIndividual = validateIndividual;
@@ -57,7 +57,7 @@ namespace GeneticBrainfuck.Algorithm
             var linkedList = new LinkedList<T>();
             for (int i = 0; i < individualSize; i++)
             {
-                linkedList.AddLast(CreateNewRandomGen(null, Random));
+                linkedList.AddLast(CreateNewRandomGen(Random));
             }
             return linkedList;
         }
@@ -181,13 +181,17 @@ namespace GeneticBrainfuck.Algorithm
         {
             foreach (var individual in newPopulation)
             {
+                if (insertionRate >= Random.NextDouble())
+                {
+                    individual.AddFirst(CreateNewRandomGen(Random));
+                }
                 var node = individual.First;
                 while (node != null)
                 {
                     var deletedNode = false;
                     if (mutationRate >= Random.NextDouble())
                     {
-                        node.Value = CreateNewRandomGen(node.Value, Random);
+                        node.Value = CreateNewRandomGen(Random);
                     }
                     if (deletionRate >= Random.NextDouble())
                     {
@@ -198,7 +202,7 @@ namespace GeneticBrainfuck.Algorithm
                     }
                     if (node != null && insertionRate >= Random.NextDouble())
                     {
-                        individual.AddAfter(node, CreateNewRandomGen(null, Random));
+                        individual.AddAfter(node, CreateNewRandomGen(Random));
                         node = node.Next;
                     }
 

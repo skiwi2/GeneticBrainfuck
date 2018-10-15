@@ -41,7 +41,7 @@ namespace GeneticBrainfuck
                 ValidateIndividual,
                 CalculateFitness
             );
-            geneticAlgorithm.InitializePopulation(50, 8);
+            geneticAlgorithm.InitializePopulation(100, 8);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
             var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Select(ToBFChar).ToArray());
             Console.WriteLine($"Generation {generation,5}: {initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
@@ -57,7 +57,7 @@ namespace GeneticBrainfuck
                     Console.WriteLine($"Found correct program: {programText}");
                 }
 
-                geneticAlgorithm.ComputeNextGeneration(0.2d, 0.5d, 0.05d, 0.05d, 0.05d);
+                geneticAlgorithm.ComputeNextGeneration(0.1d, 0.5d, 0.05d, 0.05d, 0.05d);
                 generation++;
             }
         }
@@ -87,14 +87,9 @@ namespace GeneticBrainfuck
             return task.Result;
         }
 
-        private static BrainfuckGen CreateNewBrainfuckGen(BrainfuckGen? oldGen, Random random)
+        private static BrainfuckGen CreateNewBrainfuckGen(Random random)
         {
-            var possibleGenes = ((BrainfuckGen[])Enum.GetValues(typeof(BrainfuckGen))).ToList();
-            if (oldGen.HasValue)
-            {
-                possibleGenes.Remove(oldGen.Value);
-            }
-            return possibleGenes[random.Next(possibleGenes.Count)];
+            return (BrainfuckGen)random.Next(8);
         }
 
         private static int CalculateFitness(LinkedList<BrainfuckGen> individual) 
