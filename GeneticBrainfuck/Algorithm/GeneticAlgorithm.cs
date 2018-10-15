@@ -10,6 +10,8 @@ namespace GeneticBrainfuck.Algorithm
 {
     public class GeneticAlgorithm<T> where T : struct
     {
+        public uint Generation { get; private set; }
+
         private Func<Random, T> CreateNewRandomGen { get; set; }
 
         private Predicate<LinkedList<T>> ValidateIndividual { get; set; }
@@ -24,6 +26,7 @@ namespace GeneticBrainfuck.Algorithm
 
         public GeneticAlgorithm(Func<Random, T> createNewRandomGen, Predicate<LinkedList<T>> validateIndividual, Func<LinkedList<T>, int> calculateFitness)
         {
+            Generation = 0;
             CreateNewRandomGen = createNewRandomGen;
             ValidateIndividual = validateIndividual;
             CalculateFitness = calculateFitness;
@@ -49,6 +52,7 @@ namespace GeneticBrainfuck.Algorithm
                 while (!ValidateIndividual(newIndividual));
                 Population.Add(newIndividual);
             }
+            Generation++;
             ComputeIndividualStatistics();
         }
 
@@ -72,6 +76,7 @@ namespace GeneticBrainfuck.Algorithm
             newPopulation.AddRange(elites);
             Debug.Assert(newPopulation.Count == Population.Count);
             Population = newPopulation;
+            Generation++;
             ComputeIndividualStatistics();
         }
 

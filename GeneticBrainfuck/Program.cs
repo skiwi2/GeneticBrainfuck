@@ -34,8 +34,6 @@ namespace GeneticBrainfuck
 
         static void Main(string[] args)
         {
-            int generation = 1;
-
             var geneticAlgorithm = new GeneticAlgorithm<BrainfuckGen>(
                 CreateNewBrainfuckGen, 
                 ValidateIndividual,
@@ -44,13 +42,13 @@ namespace GeneticBrainfuck
             geneticAlgorithm.InitializePopulation(100, 8);
             var initialGenerationStatistics = geneticAlgorithm.GetGenerationStatistics();
             var initialProgramText = new string(initialGenerationStatistics.BestIndividual.Select(ToBFChar).ToArray());
-            Console.WriteLine($"Generation {generation,5}: {initialGenerationStatistics.AverageFitness,5} average fitness, {initialGenerationStatistics.BestFitness,5} best fitness for {initialProgramText}");
+            PrintGeneration(geneticAlgorithm, initialGenerationStatistics, initialProgramText);
 
             while (true)
             {
                 var generationStatistics = geneticAlgorithm.GetGenerationStatistics();
                 var programText = new string(generationStatistics.BestIndividual.Select(ToBFChar).ToArray());
-                Console.WriteLine($"Generation {generation,5}: {generationStatistics.AverageFitness,5} average fitness, {generationStatistics.BestFitness,5} best fitness for {programText}");
+                PrintGeneration(geneticAlgorithm, generationStatistics, programText);
 
                 if (IsCorrectProgram(programText))
                 {
@@ -58,8 +56,15 @@ namespace GeneticBrainfuck
                 }
 
                 geneticAlgorithm.ComputeNextGeneration(0.1d, 0.5d, 0.05d, 0.05d, 0.05d);
-                generation++;
             }
+        }
+
+        private static void PrintGeneration<T>(GeneticAlgorithm<T> geneticAlgorithm, GenerationStatistics<T> generationStatistics, string programText) where T : struct
+        {
+            var generation = geneticAlgorithm.Generation;
+            var averageFitness = generationStatistics.AverageFitness;
+            var bestFitness = generationStatistics.BestFitness;
+            Console.WriteLine($"Generation {generation,5}: {averageFitness,5} average fitness, {bestFitness,5} best fitness for {programText}");
         }
 
         private static bool IsCorrectProgram(string programText)
